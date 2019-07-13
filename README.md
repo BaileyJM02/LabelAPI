@@ -23,14 +23,18 @@ a nested example would look like so, where the parent would be matched with a la
 	"textcolor": "#cccccc"
 }
 ```
-This will then return the created label like so:
+This will then return the created label like so, encased in a success response:
 ```json
 {
-	"name": "example",
-	"slug": "example",
-	"path": "parent/sub-parent/example",
-	"backgroundcolor": "#ffffff",
-	"textcolor": "#cccccc"
+    "status": "success",
+    "data": {
+		"name": "example",
+		"slug": "example",
+		"path": "parent/sub-parent/example",
+		"backgroundcolor": "#ffffff",
+		"textcolor": "#cccccc"
+    },
+    "code": 200
 }
 ```
 
@@ -49,14 +53,18 @@ a nested example would look like so, where the label would have to have a parent
 	"path": "parent/sub-parent/example"
 }
 ```
-This would return a full label mathcing the path, like so:
+This would return a full label mathcing the path, like so, encased in a success response:
 ```json
 {
-	"name": "example",
-	"slug": "example",
-	"path": "parent/sub-parent/example",
-	"backgroundcolor": "#ffffff",
-	"textcolor": "#cccccc"
+    "status": "success",
+    "data": {
+		"name": "example",
+		"slug": "example",
+		"path": "parent/sub-parent/example",
+		"backgroundcolor": "#ffffff",
+		"textcolor": "#cccccc"
+    },
+    "code": 200
 }
 ```
 
@@ -77,13 +85,17 @@ a nested example would look like so, where the label would have to have a parent
 	"name": "updated-example"
 }
 ```
-This will then return a full, updated label (with the **new** path if the slug or name was changed), like so:
+This will then return a full, updated label (with the **new** path if the slug or name was changed), like so, encased in a success response:
 ```json
 {
-	"name": "updated-example",
-	"slug": "updated-example",
-	"path": "parent/sub-parent/updated-example",
-	"backgroundcolor": "#ffffff",
-	"textcolor": "#cccccc"
+	    "status": "success",
+    "data": {
+		"name": "updated-example",
+		"slug": "updated-example",
+		"path": "parent/sub-parent/updated-example",
+		"backgroundcolor": "#ffffff",
+		"textcolor": "#cccccc"
+    },
+    "code": 200
 }
 ```
