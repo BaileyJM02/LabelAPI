@@ -1,8 +1,8 @@
 <h1 align="center">Label API</h1>
-<p align="center"><a href="#docs">[Docs](#docs)</a><br/>
-<a href="#setup">Setup](#setup)</a><br/>
-<a href="#walk-through">[Walk-through](#walk-through)</a><br/>
-<a href="#testing">[Testing](#testing)</a>
+<p align="center"><a href="#docs">Docs</a><br/>
+<a href="#setup">Setup</a><br/>
+<a href="#walk-through">Walk-through</a><br/>
+<a href="#testing">Testing</a>
 </p>
 
 # Docs
