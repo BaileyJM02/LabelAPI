@@ -1,42 +1,42 @@
 # config/routes.yaml
 index:
     path: /
-    controller: 'App\Controller\DefaultController::index'
+    controller: 'App\Controller\LabelController::index'
     methods:  [GET]
 
 api:
     path: /api
-    controller: 'App\Controller\DefaultController::index'
+    controller: 'App\Controller\LabelController::index'
     methods:  [GET]
 
 # /api/label...
 api_get:
     path: /api/label
-    controller: 'App\Controller\DefaultController::api_get'
+    controller: 'App\Controller\LabelController::api_get'
     methods:  [GET]
 
 api_create:
     path: /api/label
-    controller: 'App\Controller\DefaultController::api_create'
+    controller: 'App\Controller\LabelController::api_create'
     methods:  [POST]
 
 api_update:
     path: /api/label
-    controller: 'App\Controller\DefaultController::api_update'
+    controller: 'App\Controller\LabelController::api_update'
     methods:  [PUT, PATCH]
 
 api_delete:
     path: /api/label
-    controller: 'App\Controller\DefaultController::api_delete'
+    controller: 'App\Controller\LabelController::api_delete'
     methods:  [DELETE]
 
 # /_test/api/...
 test_api_error:
     path: /_test/api/error/{code}
-    controller: 'App\Controller\DefaultController::test_api_error'
+    controller: 'App\Controller\LabelController::test_api_error'
     methods:  [GET]
 
 test_api_success:
     path: /_test/api/success/
-    controller: 'App\Controller\DefaultController::test_api_success'
+    controller: 'App\Controller\LabelController::test_api_success'
     methods:  [GET]

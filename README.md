@@ -53,7 +53,7 @@ a nested example would look like so, where the label would have to have a parent
 	"path": "parent/sub-parent/example"
 }
 ```
-This would return a full label mathcing the path, like so, encased in a success response:
+This would return a full label matching the path, like so, encased in a success response:
 ```json
 {
     "status": "success",
@@ -93,6 +93,36 @@ This will then return a full, updated label (with the **new** path if the slug o
 		"name": "updated-example",
 		"slug": "updated-example",
 		"path": "parent/sub-parent/updated-example",
+		"backgroundcolor": "#ffffff",
+		"textcolor": "#cccccc"
+    },
+    "code": 200
+}
+```
+
+## **Path**: /api/label
+**Methods**:  DELETE
+
+This only needs the path to delete the correct label, all other keys will be ignored:
+```json
+{
+	"path": "example"
+}
+```
+a nested example would look like so, where the label would have to have a parent of `parent` and `parent/sub-parent` :
+```json
+{
+	"path": "parent/sub-parent/example"
+}
+```
+This would return a full label matching the path, like so, encased in a success response. Though it will not longer exist in the database:
+```json
+{
+    "status": "success",
+    "data": {
+		"name": "example",
+		"slug": "example",
+		"path": "parent/sub-parent/example",
 		"backgroundcolor": "#ffffff",
 		"textcolor": "#cccccc"
     },
