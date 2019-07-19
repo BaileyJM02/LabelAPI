@@ -675,10 +675,12 @@ class LabelController extends AbstractController
 		// Convert to an array without id value
 		$response = $label->sterilize();
 
+		// create an empty nested array
+		$nested = [];
+
 		// fetch all children
 		if ($parent !== false) {
-			// create an empty nested array
-			$nested = [];
+
 			// for each child
 			foreach ($parent as $child)
 			{

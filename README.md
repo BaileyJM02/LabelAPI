@@ -5,6 +5,8 @@
 <a href="#testing">Testing</a>
 </p>
 
+Honestly, considering I haven't used any of the given frameworks before, I think I did an alright job. If you could show me how to get the tests working, that would be great!
+
 # Docs
 
 ## **Path**: /api/label
@@ -393,3 +395,11 @@ This should give you a final output of:
 ```
 
 # Testing
+
+To setup testing, please follow these steps:
+1. Enter the `.env.test` file and replace line 6 with your credentials for the **test** MySQL database. Currently `DATABASE_URL=mysql://user:UserPassw0rd@localhost:3306/labelapitest`.
+2. Run `php bin/console doctrine:database:create -e test` to create the database.
+3. As we already have an entity file created, we **do not need** to run `php bin/console make:migration` again to create a file containing SQL needed to update the new database, it will use the old one.
+4. We need to run this next command to use the previous migration file: `php bin/console doctrine:migrations:migrate -e test`. Now, the test database should be fully setup.
+
+To run the tests, use the command `php bin/phpunit`.
