@@ -6,9 +6,9 @@ use App\Entity\Label;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-class LabelController extends Controller
+class LabelController extends AbstractController
 {
 
 	// Private function for a success response template
@@ -207,7 +207,19 @@ class LabelController extends Controller
 		}
 
 		// Sort out slug and path
-		if ($data->name !== $data->slug)
+		if (preg_match('/\s/', $data->slug))
+		{
+			$data->slug = strtolower($data->slug);
+			//Make alphanumeric (removes all other characters)
+			$data->slug = preg_replace("/[^a-z0-9_\s-]/", "", $data->slug);
+			//Clean up multiple dashes or whitespaces
+			$data->slug = preg_replace("/[\s-]+/", " ", $data->slug);
+			//Convert whitespaces and underscore to dash
+			$data->slug = preg_replace("/[\s_]/", "-", $data->slug);
+		}
+
+		// check that they match, removing the dashes we just added for the check
+		if (strtolower($data->name) !== strtolower(str_replace("-"," ",$data->slug)))
 		{
 			return 1017;
 		}
@@ -407,6 +419,17 @@ class LabelController extends Controller
 		}
 		if (isset($data->slug))
 		{
+			if (preg_match('/\s/', $data->slug))
+			{
+				$data->slug = strtolower($data->slug);
+				//Make alphanumeric (removes all other characters)
+				$data->slug = preg_replace("/[^a-z0-9_\s-]/", "", $data->slug);
+				//Clean up multiple dashes or whitespaces
+				$data->slug = preg_replace("/[\s-]+/", " ", $data->slug);
+				//Convert whitespaces and underscore to dash
+				$data->slug = preg_replace("/[\s_]/", "-", $data->slug);
+			}
+
 			if (strlen($data->slug) > 255)
 			{
 				return 1013;
@@ -414,7 +437,8 @@ class LabelController extends Controller
 		}
 		if (isset($data->name) && isset($data->slug))
 		{
-			if ($data->name !== $data->slug)
+			// check that they match, removing the dashes we just added for the check
+			if (strtolower($data->name) !== strtolower(str_replace("-"," ",$data->slug)))
 			{
 				return 1017;
 			}
@@ -469,9 +493,21 @@ class LabelController extends Controller
 			// if name is present instead of slug
 		} elseif (isset($data->name) && !isset($data->slug))
 		{
-			if (end($path) != $data->name) {
+			$slug = strtolower($data->name);
+
+			if (preg_match('/\s/', $data->name))
+			{
+				//Make alphanumeric (removes all other characters)
+				$slug = preg_replace("/[^a-z0-9_\s-]/", "", $slug);
+				//Clean up multiple dashes or whitespaces
+				$slug = preg_replace("/[\s-]+/", " ", $slug);
+				//Convert whitespaces and underscore to dash
+				$slug = preg_replace("/[\s_]/", "-", $slug);
+			}
+
+			if (end($path) != $slug) {
 				array_pop($path);
-				array_push($path, $data->name);
+				array_push($path, $slug);
 				$path = implode("/", $path);
 				$label->setPath($path);
 				if ($parent !== false) {
@@ -484,24 +520,47 @@ class LabelController extends Controller
 		{
 			// as they both have to match
 			$label->setName($data->name);
+			// Sort out slug
+			if (preg_match('/\s/', $data->name))
+			{
+				$data->name = strtolower($data->name);
+				//Make alphanumeric (removes all other characters)
+				$data->name = preg_replace("/[^a-z0-9_\s-]/", "", $data->name);
+				//Clean up multiple dashes or whitespaces
+				$data->name = preg_replace("/[\s-]+/", " ", $data->name);
+				//Convert whitespaces and underscore to dash
+				$data->name = preg_replace("/[\s_]/", "-", $data->name);
+			}
 			$label->setSlug($data->name);
 		}
 		if (isset($data->slug))
 		{
-			// as they both have to match
-			$label->setName($data->slug);
+			// Sort out slug
+			if (!preg_match('/\s/', $data->slug))
+			{
+				$data->name = str_replace("-"," ",$data->slug);
+				$data->name = ucwords($data->name);
+				//Clean up multiple dashes or whitespaces
+				$data->name = preg_replace("/[\s-]+/", " ", $data->name);
+			}
 			$label->setSlug($data->slug);
+			// as they both have to match
+			$label->setName($data->name);
 		}
 		if (isset($data->textcolor))
 		{
 			if ($parent !== false) {
 				$this->fixParent($parentpath, null, $data);
+			} else {
+				$label->setTextcolor($data->textcolor);
 			}
 		}
 		if (isset($data->backgroundcolor))
 		{
 			if ($parent !== false) {
 				$this->fixParent($parentpath, null, $data);
+			} else {
+				$label->setBackgroundcolor($data->backgroundcolor);
 			}
 		}
 
@@ -557,6 +616,12 @@ class LabelController extends Controller
 
 	public function labelFetch($data)
     {
+
+		if (!isset($data->path))
+		{
+			return 1009;
+		}
+
 		$database = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Label::class);
 
@@ -570,9 +635,28 @@ class LabelController extends Controller
 			return 1021;
 		}
 
-		// pass back as an array without id value
+		$parent = $this->parent($label);
+
+		// Convert to an array without id value
 		$response = $label->sterilize();
 
+		// fetch all children
+		if ($parent !== false) {
+			$nested = [];
+			foreach ($parent as $child)
+			{
+				// sterilize and push to an array
+				$array = $child->sterilize();
+				if ($array['path'] !== $path)
+				{
+					array_push($nested, $array);
+				}
+			}
+		}
+		if (count($nested) > 0)
+		{
+			$response['nested'] = $nested;
+		}
         return $response;
     }
 
