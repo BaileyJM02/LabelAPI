@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+// Extending the controller allows us to access the Doctrine instance
 class LabelController extends AbstractController
 {
 
@@ -224,6 +225,7 @@ class LabelController extends AbstractController
 			return 1017;
 		}
 
+		// split the path into an array
 		$path = preg_split("#/#", $data->path);
 
 		// remove any empty, for example test//happy -> test/happy
@@ -273,6 +275,7 @@ class LabelController extends AbstractController
 		// remove any empty, for example sad//happy -> sad/happy
 		$path = array_filter($path);
 		$path = implode("/", $path);
+		// search for all paths matching the start of the parent
 		$result = $this->getDoctrine()->getRepository(Label::class)->createQueryBuilder('l')
 			->where(
 				$this->getDoctrine()->getRepository(Label::class)->createQueryBuilder('l')
@@ -291,12 +294,14 @@ class LabelController extends AbstractController
 		return false;
 	}
 
+	// a function holding the logic to change paths and update colors for children etc.
 	public function fixParent($parentpath, $newPath, $data = [], $deletedLabel = false)
 	{
 		$path = preg_split("#/#", $parentpath);
 		// remove any empty, for example sad//happy -> sad/happy
 		$path = array_filter($path);
 		$path = implode("/", $path);
+		// search for all labels with the start of the path matching
 		$result = $this->getDoctrine()->getRepository(Label::class)->createQueryBuilder('l')
 			->where(
 				$this->getDoctrine()->getRepository(Label::class)->createQueryBuilder('l')
@@ -307,9 +312,11 @@ class LabelController extends AbstractController
 			->getQuery()
 			->getResult();
 
+		// init variables
 		$database = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Label::class);
 
+		// if have a path to change
 		if ($newPath !== null)
 		{
 			foreach ($result as &$label) {
@@ -319,9 +326,8 @@ class LabelController extends AbstractController
 				$toBePath = preg_split("#/#", $newPath);
 				$toBePath = array_filter($toBePath);
 
-				// This means that due to the toBePath being 1 shorter,
-				// we need to add one value to the count so the old slug is also removed.
-				// Otherwise we just leave it
+				// This means that due to the toBePath being 1 shorter (ie a label was deleted),
+				// we need to add one value to the count so the old slug for the deleted label is also removed.
 				if ($deletedLabel === false)
 				{
 					$oldPath = array_slice($oldPath, count($toBePath));
@@ -329,6 +335,7 @@ class LabelController extends AbstractController
 					$oldPath = array_slice($oldPath, count($toBePath)+1);
 				}
 
+				// merge arrays
 				$path = array_merge($toBePath, $oldPath);
 				$path = implode("/", $path);
 				// we then set the path
@@ -336,7 +343,7 @@ class LabelController extends AbstractController
 			}
 		}
 
-		// if main parent - check whether data actually exists first.
+		// if it's the main parent, also check whether we have a data value.
 		if (count(preg_split("#/#", $parentpath)) == 1 && $data !== []) {
 			foreach ($result as &$label) {
 				// This swaps the color to the parents
@@ -368,6 +375,7 @@ class LabelController extends AbstractController
 		$database = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Label::class);
 
+		// create a label
 		$label = new Label();
         $label->setName($data->name);
 		$label->setSlug($data->slug);
@@ -394,6 +402,7 @@ class LabelController extends AbstractController
 
 	public function labelUpdate($data)
     {
+		// check we have a path
 		if (!isset($data->path))
 		{
 			return 1009;
@@ -467,13 +476,14 @@ class LabelController extends AbstractController
 		$path = array_filter($path);
 		$path = implode("/", $path);
 
+		// find the label
 		$label = $repository->findOneBy(['path' => $path]);
 		if (!$label) {
 			return 1021;
 		}
 
 		$parent = $this->parent($label);
-		// Unaltered label can be later used
+		// Unaltered path can be later used
 		$parentpath = $path;
 
 		// change path back to array
@@ -481,11 +491,18 @@ class LabelController extends AbstractController
 		// check path
 		if (isset($data->slug))
 		{
+			// some magic to ensure the end of the path is the labels slug
 			if (end($path) != $data->slug) {
+				$data->slug = strtolower($data->slug);
+				// remove the old trailing slug
 				array_pop($path);
+				// add the new one
 				array_push($path, $data->slug);
+				// return to a string
 				$path = implode("/", $path);
+				// set the path
 				$label->setPath($path);
+				// fix all child paths
 				if ($parent !== false) {
 					$this->fixParent($parentpath, $path);
 				}
@@ -493,8 +510,9 @@ class LabelController extends AbstractController
 			// if name is present instead of slug
 		} elseif (isset($data->name) && !isset($data->slug))
 		{
+			// lowercase for url paths
 			$slug = strtolower($data->name);
-
+			// if contains white space
 			if (preg_match('/\s/', $data->name))
 			{
 				//Make alphanumeric (removes all other characters)
@@ -505,11 +523,15 @@ class LabelController extends AbstractController
 				$slug = preg_replace("/[\s_]/", "-", $slug);
 			}
 
+			// some magic to ensure the end of the path is the labels slug
 			if (end($path) != $slug) {
+				// remove the old trailing slug
 				array_pop($path);
+				// add the new one
 				array_push($path, $slug);
 				$path = implode("/", $path);
 				$label->setPath($path);
+				// fix all child paths
 				if ($parent !== false) {
 					$this->fixParent($parentpath, $path);
 				}
@@ -538,7 +560,9 @@ class LabelController extends AbstractController
 			// Sort out slug
 			if (!preg_match('/\s/', $data->slug))
 			{
+				// return to a *normal* string ie no dashes
 				$data->name = str_replace("-"," ",$data->slug);
+				// capitalize
 				$data->name = ucwords($data->name);
 				//Clean up multiple dashes or whitespaces
 				$data->name = preg_replace("/[\s-]+/", " ", $data->name);
@@ -549,17 +573,21 @@ class LabelController extends AbstractController
 		}
 		if (isset($data->textcolor))
 		{
+			// change child color values if parents is updated
 			if ($parent !== false) {
 				$this->fixParent($parentpath, null, $data);
 			} else {
+				// no parent so set self
 				$label->setTextcolor($data->textcolor);
 			}
 		}
 		if (isset($data->backgroundcolor))
 		{
+			// change child color values if parents is updated
 			if ($parent !== false) {
 				$this->fixParent($parentpath, null, $data);
 			} else {
+				// no parent so set self
 				$label->setBackgroundcolor($data->backgroundcolor);
 			}
 		}
@@ -575,6 +603,7 @@ class LabelController extends AbstractController
 
 	public function labelDelete($data)
     {
+		// check we have a path
 		if (!isset($data->path))
 		{
 			return 1009;
@@ -588,15 +617,18 @@ class LabelController extends AbstractController
 		$path = array_filter($path);
 		$path = implode("/", $path);
 
+		// find label to be deleted
 		$label = $repository->findOneBy(['path' => $path]);
 		if (!$label) {
 			return 1021;
 		}
 
+		// find of this label is a parent
 		$parent = $this->parent($label);
 
 		if ($parent !== false) {
-			// This removed the deleted label from on paths it is a parent too
+			// This removes the deleted label from all paths of its children
+			// /label/deleted/child will become /label/child
 			$path = preg_split("#/#", $path);
 			$toBePath = array_filter($path);
 			array_pop($toBePath);
@@ -605,6 +637,7 @@ class LabelController extends AbstractController
 			$this->fixParent($path, $toBePath,[],true);
 		}
 
+		// delete label
 		$database->remove($label);
 		$database->flush();
 
@@ -616,7 +649,7 @@ class LabelController extends AbstractController
 
 	public function labelFetch($data)
     {
-
+		// check we have a path
 		if (!isset($data->path))
 		{
 			return 1009;
@@ -630,11 +663,13 @@ class LabelController extends AbstractController
 		$path = array_filter($path);
 		$path = implode("/", $path);
 
+		// find label by path
 		$label = $repository->findOneBy(['path' => $path]);
 		if (!$label) {
 			return 1021;
 		}
 
+		// check if its a label
 		$parent = $this->parent($label);
 
 		// Convert to an array without id value
@@ -642,58 +677,50 @@ class LabelController extends AbstractController
 
 		// fetch all children
 		if ($parent !== false) {
+			// create an empty nested array
 			$nested = [];
+			// for each child
 			foreach ($parent as $child)
 			{
 				// sterilize and push to an array
 				$array = $child->sterilize();
+				// if it is its self ignore - as it will always return its self
 				if ($array['path'] !== $path)
 				{
 					array_push($nested, $array);
 				}
 			}
 		}
+		// if the nested array is null (or a length of 0) don't add the nested parameter
 		if (count($nested) > 0)
 		{
 			$response['nested'] = $nested;
 		}
+
         return $response;
-    }
-
-	/*
-		/_test/api/...
-	*/
-
-	public function test_api_error($code) : Response
-    {
-		// Call the error response with code
-        return $this->error($code);
-    }
-
-	public function test_api_success() : Response
-    {
-		$data = '{"name": "testing"}';
-
-		// Call the success response with data
-        return $this->success($data);
     }
 
 	/*
 		/api/...
 	*/
 
+	// The actual endpoints
+
     public function index() : Response
     {
         return new Response('Please use the entry point `/api/label` for the demo.');
 	}
 
+	// was gonna be used for the GUI but didn't get time
 	public function api_label_not_given() : Response
     {
         return $this->error(1004);
 	}
 
+	// Called over an HTTP GET method
 	public function api_get(Request $request) : Response
     {
+		// Get HTTP request body and decode
 		$json = $request->getContent();
 		$data = json_decode($json);
 
@@ -707,33 +734,40 @@ class LabelController extends AbstractController
 
 		// return found label
 		$response = json_encode($label);
+		// send encased within a success response
         return $this->success($response);
 	}
 
 	public function api_create(Request $request) : Response
     {
+		// Get HTTP request body and decode
 		$json = $request->getContent();
 		$data = json_decode($json);
+
+		// check that it is valid
 		$valid = $this->isValid($data);
 		if ($valid !== true)
 		{
 			return $this->error($valid);
 		}
-		// Create will override Label class with LabelStruct class, creating a label
+
+		// This will create a label and pass it back
 		$label = $this->labelCreate($data);
 
 		// There shouldn't be any errors from validating it, however, there might be a duplicate error etc.
-
 		if (is_int($label)) {
 			return $this->error($label);
 		}
 
+		// encode the response
 		$response = json_encode($data);
+		// send encased within a success response
         return $this->success($response);
 	}
 
 	public function api_update(Request $request) : Response
     {
+		// Get HTTP request body and decode
         $json = $request->getContent();
 		$data = json_decode($json);
 
@@ -747,11 +781,13 @@ class LabelController extends AbstractController
 
 		// return updated label
 		$response = json_encode($label);
+		// send encased within a success response
         return $this->success($response);
 	}
 
 	public function api_delete(Request $request) : Response
     {
+		// Get HTTP request body and decode
         $json = $request->getContent();
 		$data = json_decode($json);
 
@@ -769,5 +805,8 @@ class LabelController extends AbstractController
 	}
 }
 
+/*
+	Wew! That was quite an adventure.
+*/
 
 ?>
