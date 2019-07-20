@@ -403,3 +403,8 @@ To setup testing, please follow these steps:
 4. We need to run this next command to use the previous migration file: `php bin/console doctrine:migrations:migrate -e test`. Now, the test database should be fully setup.
 
 To run the tests, use the command `php bin/phpunit`.
+
+Output should be along the lines of:
+```console
+OK (49 tests, 147 assertions)
+```
