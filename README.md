@@ -5,7 +5,7 @@
 <a href="#testing">Testing</a>
 </p>
 
-Honestly, considering I haven't used any of the given frameworks before, I think I did an alright job. If you could show me how to get the tests working, that would be great!
+Honestly, considering I haven't used any of the given frameworks before, I think I did an alright job.
 
 # Docs
 
