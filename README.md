@@ -406,5 +406,5 @@ To run the tests, use the command `php bin/phpunit`.
 
 Output should be along the lines of:
 ```console
-OK (49 tests, 147 assertions)
+OK (48 tests, 144 assertions)
 ```

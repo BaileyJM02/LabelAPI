@@ -233,18 +233,6 @@ class LabelControllerTest extends WebTestCase
 				"backgroundcolor" => "#ffffff",
 				"textcolor" => "#000000",
 			)
-			)),
-			// test 11 pt.3 - Check that adding a child to a label that does not exists does not work
-			array(array("payload" => array(
-				"name" => "Child",
-				"slug" => "child",
-				"path" => "testing-non-parent/child",
-				"backgroundcolor" => "#ffffff",
-				"textcolor" => "#000000",
-			),
-			"response" => 400,
-			"code" => 1016,
-			"return" => false
 			))
 		);
 	}
