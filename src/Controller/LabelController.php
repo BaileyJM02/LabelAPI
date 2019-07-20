@@ -208,16 +208,14 @@ class LabelController extends AbstractController
 		}
 
 		// Sort out slug and path
-		if (preg_match('/\s/', $data->slug))
-		{
-			$data->slug = strtolower($data->slug);
-			//Make alphanumeric (removes all other characters)
-			$data->slug = preg_replace("/[^a-z0-9_\s-]/", "", $data->slug);
-			//Clean up multiple dashes or whitespaces
-			$data->slug = preg_replace("/[\s-]+/", " ", $data->slug);
-			//Convert whitespaces and underscore to dash
-			$data->slug = preg_replace("/[\s_]/", "-", $data->slug);
-		}
+		$data->slug = strtolower($data->slug);
+		//Make alphanumeric (removes all other characters)
+		$data->slug = preg_replace("/[^a-zA-Z0-9_\s-]+/", "", $data->slug);
+		//Clean up multiple dashes or whitespaces
+		$data->slug = preg_replace("/[\s-]+/", " ", $data->slug);
+		//Convert whitespaces and underscore to dash
+		$data->slug = preg_replace("/[\s_]/", "-", $data->slug);
+
 
 		// check that they match, removing the dashes we just added for the check
 		if (strtolower($data->name) !== strtolower(str_replace("-"," ",$data->slug)))
@@ -272,6 +270,10 @@ class LabelController extends AbstractController
 	public function parent($label)
 	{
 		$path = preg_split("#/#", $label->getPath());
+		if (count($path) < 1)
+		{
+			return false;
+		}
 		// remove any empty, for example sad//happy -> sad/happy
 		$path = array_filter($path);
 		$path = implode("/", $path);
@@ -282,12 +284,11 @@ class LabelController extends AbstractController
 					->expr()
 					->like('l.path', '?1')
 			)
-			->setParameter('1', ($path).'%')
+			->setParameter('1', ($path).'/%')
 			->getQuery()
 			->getResult();
 
-		// should always return at least 1 (itself)
-		if (count($result) > 1) {
+		if (count($result) > 0) {
 			return $result;
 		}
 
@@ -308,7 +309,7 @@ class LabelController extends AbstractController
 					->expr()
 					->like('l.path', '?1')
 			)
-			->setParameter('1', ($path).'%')
+			->setParameter('1', ($path).'/%')
 			->getQuery()
 			->getResult();
 
@@ -383,6 +384,18 @@ class LabelController extends AbstractController
 		$label->setTextColor($data->textcolor);
 		$label->setBackgroundColor($data->backgroundcolor);
 
+		$path = preg_split("#/#", $label->getPath());
+		$path = array_filter($path);
+		array_pop($path);
+		if (count($path) > 1)
+		{
+			$exists = $repository->findBy(['path' => $path[0]]);
+			if (count($exists) < 0)
+			{
+				return 1019;
+			}
+		}
+
 		// check for duplicates
 		$dupes = $repository->findBy(['path' => $label->getPath()]);
 		if (count($dupes) > 0)
@@ -432,7 +445,7 @@ class LabelController extends AbstractController
 			{
 				$data->slug = strtolower($data->slug);
 				//Make alphanumeric (removes all other characters)
-				$data->slug = preg_replace("/[^a-z0-9_\s-]/", "", $data->slug);
+				$data->slug = preg_replace("/[^a-zA-Z0-9_\s-]+/", "", $data->slug);
 				//Clean up multiple dashes or whitespaces
 				$data->slug = preg_replace("/[\s-]+/", " ", $data->slug);
 				//Convert whitespaces and underscore to dash
@@ -516,7 +529,7 @@ class LabelController extends AbstractController
 			if (preg_match('/\s/', $data->name))
 			{
 				//Make alphanumeric (removes all other characters)
-				$slug = preg_replace("/[^a-z0-9_\s-]/", "", $slug);
+				$slug = preg_replace("/[^a-zA-Z0-9_\s-]+/", "", $slug);
 				//Clean up multiple dashes or whitespaces
 				$slug = preg_replace("/[\s-]+/", " ", $slug);
 				//Convert whitespaces and underscore to dash
@@ -547,7 +560,7 @@ class LabelController extends AbstractController
 			{
 				$data->name = strtolower($data->name);
 				//Make alphanumeric (removes all other characters)
-				$data->name = preg_replace("/[^a-z0-9_\s-]/", "", $data->name);
+				$data->name = preg_replace("/[^a-zA-Z0-9_\s-]+/", "", $data->name);
 				//Clean up multiple dashes or whitespaces
 				$data->name = preg_replace("/[\s-]+/", " ", $data->name);
 				//Convert whitespaces and underscore to dash
@@ -574,21 +587,16 @@ class LabelController extends AbstractController
 		if (isset($data->textcolor))
 		{
 			// change child color values if parents is updated
-			if ($parent !== false) {
-				$this->fixParent($parentpath, null, $data);
-			} else {
-				// no parent so set self
+			if ($parent !== false || count(preg_split("#/#", $label->getPath())) == 1) {
 				$label->setTextcolor($data->textcolor);
+				$this->fixParent($parentpath, null, $data);
 			}
 		}
 		if (isset($data->backgroundcolor))
 		{
-			// change child color values if parents is updated
-			if ($parent !== false) {
-				$this->fixParent($parentpath, null, $data);
-			} else {
-				// no parent so set self
+			if ($parent !== false || count(preg_split("#/#", $label->getPath())) == 1) {
 				$label->setBackgroundcolor($data->backgroundcolor);
+				$this->fixParent($parentpath, null, $data);
 			}
 		}
 
@@ -763,6 +771,7 @@ class LabelController extends AbstractController
 
 		// encode the response
 		$response = json_encode($data);
+
 		// send encased within a success response
         return $this->success($response);
 	}
